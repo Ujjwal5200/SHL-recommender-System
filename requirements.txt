@@ -1,0 +1,12 @@
+langchain-community
+ollama                 # optional, but helps with client if needed
+faiss-cpu
+tqdm
+requests
+beautifulsoup4
+python-dotenv
+pandas
+scikit-learn
+fastapi
+uvicorn
+streamlit
