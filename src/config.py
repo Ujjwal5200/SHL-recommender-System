@@ -14,4 +14,4 @@ class Config:
 
     # Gemini (for reranking & structured output)
     GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-    GEMINI_MODEL = "gemini-1.5-flash"             # fast + free tier generous
+    GEMINI_MODEL = "gemini-2.5-flash"             # fast + free tier generous

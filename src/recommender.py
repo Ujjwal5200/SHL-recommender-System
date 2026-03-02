@@ -1,9 +1,9 @@
 """
 Core Recommendation Engine for SHL Assessment System
-- Loads existing FAISS index (Ollama embeddings)
-- Retrieves top candidates via vector similarity
-- Reranks with Gemini 1.5-flash (free tier) + balance logic
-- Returns 5–10 recommendations in exact Appendix 2 format
+- Loads existing FAISS index (built with Ollama/nomic-embed-text)
+- Retrieves top candidates
+- Reranks with Gemini 1.5-flash + balance logic
+- Returns 5–10 items in Appendix 2 format
 """
 
 import json
@@ -11,6 +11,7 @@ import os
 from typing import List, Dict, Any
 
 from langchain_community.vectorstores import FAISS
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import PromptTemplate
 
@@ -19,27 +20,34 @@ from src.logger import logger
 
 
 def load_vectorstore() -> FAISS:
-    """Load pre-built FAISS index from disk."""
+    """Load pre-built FAISS index — MUST provide the same embeddings used to create it."""
     if not os.path.exists(Config.INDEX_PATH):
         raise FileNotFoundError(
-            f"FAISS index not found at {Config.INDEX_PATH}. "
-            "Run src/indexer.py first (you already did)."
+            f"FAISS index not found at {Config.INDEX_PATH}. Run indexer first."
         )
+
+    embeddings = OllamaEmbeddings(
+        model="nomic-embed-text:latest",
+        base_url=Config.OLLAMA_BASE_URL
+    )
+
+    logger.info("Loading FAISS index with Ollama embeddings (nomic-embed-text)")
+
     return FAISS.load_local(
-        Config.INDEX_PATH,
+        folder_path=Config.INDEX_PATH,
+        embeddings=embeddings,
         allow_dangerous_deserialization=True
     )
 
 
 def retrieve_candidates(query: str, k: int = 35) -> List[Dict[str, Any]]:
-    """Retrieve top-k semantically similar assessments from FAISS."""
-    logger.info(f"Retrieving top-{k} candidates for query: {query[:80]}...")
-
+    logger.info(f"Retrieving top-{k} for: {query[:80]}...")
+    
     vectorstore = load_vectorstore()
     retriever = vectorstore.as_retriever(search_kwargs={"k": k})
-
+    
     docs = retriever.invoke(query)
-
+    
     candidates = []
     for doc in docs:
         meta = doc.metadata
@@ -47,12 +55,11 @@ def retrieve_candidates(query: str, k: int = 35) -> List[Dict[str, Any]]:
             "name": meta.get("name", "N/A"),
             "url": meta.get("url", ""),
             "test_types": meta.get("test_types", []),
-            "duration_minutes": meta.get("duration_minutes", 0),
             "adaptive_support": meta.get("adaptive_support", "No"),
             "remote_support": meta.get("remote_support", "No"),
             "description": meta.get("description", "N/A")[:400]
         })
-
+    
     logger.info(f"Retrieved {len(candidates)} candidates")
     return candidates
 
@@ -64,57 +71,43 @@ def rerank_with_gemini(
     max_count: int = 10,
     preferred_count: int = 7
 ) -> List[Dict[str, Any]]:
-    """
-    Use Gemini to select and rank 5–10 most relevant items.
-    Enforces balance between K (technical) and P (personality) when query suggests both.
-    Returns exact format required by API/Appendix 2.
-    """
-    logger.info("Starting Gemini reranking (1.5-flash)")
+    logger.info("Reranking with Gemini 1.5-flash")
 
-    # Heuristic: does query need both technical + soft skills?
-    needs_balance = (
-        any(w in query.lower() for w in [
-            "collaborate", "team", "communication", "personality", "behavior",
-            "leadership", "soft skill", "interpersonal", "culture", "fit"
-        ])
-        and
-        any(w in query.lower() for w in [
-            "java", "python", "sql", "developer", "technical", "programming",
-            "coding", "engineer", "analyst", "data"
-        ])
-    )
+    needs_balance = any(w in query.lower() for w in [
+        "collaborate", "team", "communication", "personality", "leadership",
+        "soft skill", "interpersonal", "culture", "fit"
+    ]) and any(w in query.lower() for w in [
+        "java", "python", "sql", "developer", "technical", "programming", "coding"
+    ])
 
-    # Format candidates for prompt
     candidates_text = "\n".join([
         f"{i+1}. {c['name']} | {c['url']} | Types: {', '.join(c['test_types'])} | "
-        f"Duration: {c['duration_minutes']} min | Adaptive: {c['adaptive_support']}"
+        f"Adaptive: {c['adaptive_support']}"
         for i, c in enumerate(candidates)
     ])
 
     prompt_text = f"""
-You are an expert at recommending SHL individual assessments.
+You are an expert SHL assessment recommender.
 
-User query:
-{query}
+Query: {query}
 
-Available candidates:
+Candidates:
 {candidates_text}
 
 Instructions:
-- Select EXACTLY between {min_count} and {max_count} most relevant assessments (aim for ~{preferred_count}).
-- If query mentions both technical skills AND collaboration/soft skills, balance Knowledge & Skills (K) and Personality & Behavior (P) types.
-- Prefer shorter durations when duration not specified in query.
-- Rank from most to least relevant.
-- Return ONLY a valid JSON array of objects. Each object MUST have exactly these keys:
+- Select EXACTLY between 5 and 10 most relevant assessments (aim for ~7).
+- If query has both technical AND soft/collaboration needs, balance K and P types.
+- Rank by relevance to query.
+- Return ONLY valid JSON array of objects with keys:
   - name (string)
   - url (string)
   - test_types (array of strings)
-  - duration_minutes (integer)
-  - adaptive_support (string: "Yes" or "No")
-  - remote_support (string: "Yes" or "No")
-  - description (string – short version, max 300 chars)
+  - duration_minutes (int)   # don't include
+  - adaptive_support (string)
+  - remote_support (string)
+  - description (string)
 
-No extra text, explanations, or markdown outside the JSON array.
+No extra text.
 """
 
     llm = ChatGoogleGenerativeAI(
@@ -128,55 +121,38 @@ No extra text, explanations, or markdown outside the JSON array.
         response = llm.invoke(prompt_text)
         text = response.content.strip()
 
-        # Clean Gemini's common wrappers
         if text.startswith("```json"):
             text = text.split("```json")[1].split("```")[0].strip()
-        elif text.startswith("```"):
-            text = text.split("```")[1].strip()
 
         selected = json.loads(text)
-
-        if not isinstance(selected, list):
-            raise ValueError("Gemini did not return a list")
-
-        selected = selected[:max_count]
+        selected = selected[:max_count] if isinstance(selected, list) else []
 
         if len(selected) < min_count:
-            logger.warning(f"Gemini returned only {len(selected)} items → using fallback")
+            logger.warning(f"Only {len(selected)} items → fallback")
             selected = candidates[:preferred_count]
 
-        # Post-process balance if needed
         if needs_balance:
-            k_count = sum(1 for x in selected if "K" in x.get("test_types", []))
-            p_count = sum(1 for x in selected if "P" in x.get("test_types", []))
+            k_count = sum("K" in x.get("test_types", []) for x in selected)
+            p_count = sum("P" in x.get("test_types", []) for x in selected)
             if k_count == 0 or p_count == 0:
                 logger.info("Applying balance correction")
-                missing_type = "P" if k_count == 0 else "K"
-                extra = [
-                    c for c in candidates
-                    if missing_type in c["test_types"] and c not in selected
-                ][:2]
+                missing = "P" if k_count == 0 else "K"
+                extra = [c for c in candidates if missing in c["test_types"] and c not in selected][:2]
                 selected.extend(extra)
                 selected = selected[:max_count]
 
-        logger.info(f"Final recommendation count: {len(selected)}")
+        logger.info(f"Final count: {len(selected)}")
         return selected
 
     except Exception as e:
-        logger.error(f"Gemini reranking failed: {str(e)}", exc_info=True)
-        logger.warning("Falling back to top retrieved candidates")
+        logger.error(f"Gemini failed: {e}")
         return candidates[:preferred_count]
 
 
 def get_recommendations(query: str) -> List[Dict[str, Any]]:
-    """
-    One-call public function: retrieve → rerank → return recommendations.
-    Used by API and frontend.
-    """
     try:
         candidates = retrieve_candidates(query)
-        recommendations = rerank_with_gemini(query, candidates)
-        return recommendations
+        return rerank_with_gemini(query, candidates)
     except Exception as e:
-        logger.critical(f"Full recommendation pipeline failed: {e}", exc_info=True)
+        logger.critical(f"Pipeline failed: {e}", exc_info=True)
         return []

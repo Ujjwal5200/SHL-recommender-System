@@ -32,7 +32,6 @@ def create_documents(assessments: List[Dict[str, Any]]) -> List[Document]:
             f"Name: {item.get('name', 'N/A')}",
             f"Description: {item.get('description', 'N/A')[:1000]}",
             f"Test Types: {' '.join(item.get('test_types', [])) or 'N/A'}",
-            f"Duration: {item.get('duration_minutes', 'N/A')} minutes",
             f"Adaptive: {item.get('adaptive_support', 'No')}",
             f"Remote: {item.get('remote_support', 'No')}"
         ])
@@ -41,7 +40,6 @@ def create_documents(assessments: List[Dict[str, Any]]) -> List[Document]:
             "url": item.get("url", ""),
             "name": item.get("name", ""),
             "test_types": item.get("test_types", []),
-            "duration_minutes": item.get("duration_minutes", 0),
             "adaptive_support": item.get("adaptive_support", "No"),
             "remote_support": item.get("remote_support", "No"),
             "description": item.get("description", "")[:500],
