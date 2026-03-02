@@ -1,7 +1,7 @@
 # test_recommend.py
 from src.recommender import get_recommendations
 
-query = "I am hiring for Java developers who can also collaborate effectively with my business teams."
+query = "I am hiring for  developers who can also collaborate effectively with my business teams. manage stress and solve problems on the fly. I want to test for cognitive ability, technical skills, and people skills."
 
 recs = get_recommendations(query)
 

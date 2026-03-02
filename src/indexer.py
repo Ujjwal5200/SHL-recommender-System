@@ -42,7 +42,7 @@ def create_documents(assessments: List[Dict[str, Any]]) -> List[Document]:
             "test_types": item.get("test_types", []),
             "adaptive_support": item.get("adaptive_support", "No"),
             "remote_support": item.get("remote_support", "No"),
-            "description": item.get("description", "")[:500],
+            "description": item.get("description", "")[:1000],
             "source": "SHL Catalog Crawl",
             "crawl_index": idx,
         }
