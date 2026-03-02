@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from src.recommender import get_recommendations
+# Use hybrid recommender (best performing)
+from src.recommender_final import get_recommendations
 from src.logger import logger
 
 app = FastAPI(title="SHL Assessment Recommender API")

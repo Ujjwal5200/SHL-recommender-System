@@ -8,8 +8,13 @@ def setup_logger(name="shl_recommender"):
     logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
-    # Console - wrap stdout with UTF-8 encoding for Windows compatibility
-    console = logging.StreamHandler(io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'))
+    # Console handler with fallback for different environments (Jupyter, etc.)
+    try:
+        # Try to use sys.stdout.buffer for proper encoding (standard Python)
+        console = logging.StreamHandler(io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8'))
+    except AttributeError:
+        # Fallback for Jupyter notebooks and other environments where sys.stdout.buffer doesn't exist
+        console = logging.StreamHandler(sys.stdout)
     console.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     logger.addHandler(console)
 
