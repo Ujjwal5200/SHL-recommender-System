@@ -26,7 +26,8 @@ import pandas as pd
 # CONFIGURATION
 # ============================================================================
 
-PROJECT_ROOT = Path("C:/Users/Ujjwal kaushik/Desktop/SHL-assessment-recommender")
+import os
+PROJECT_ROOT = Path(__file__).parent.parent
 DATA_DIR = PROJECT_ROOT / "data"
 ASSESSMENTS_FILE = DATA_DIR / "shl_individual_tests_20260302_1257.json"
 GROUND_TRUTH_FILE = DATA_DIR / "Gen_AI_Dataset.xlsx"
