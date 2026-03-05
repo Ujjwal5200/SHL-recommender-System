@@ -5,7 +5,7 @@ from typing import Optional
 import os
 
 from src.recommender import recommend, initialize
-from config_v9 import logger, LOG_LEVEL
+from src.config_v9 import logger, LOG_LEVEL
 import logging
 
 # Configure logging

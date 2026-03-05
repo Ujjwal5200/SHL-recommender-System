@@ -7,12 +7,12 @@ import json
 import numpy as np
 import faiss
 import logging
-from config_v9 import DATA_DIR, FAISS_DIR, EMBED_MODEL, logger
+from src.config_v9 import DATA_DIR, FAISS_DIR, EMBED_MODEL, logger
 from tqdm.auto import tqdm
 from pathlib import Path
 from glob import glob
 
-from config_v9 import DATA_DIR, FAISS_DIR, EMBED_MODEL, logger
+from src.config_v9 import DATA_DIR, FAISS_DIR, EMBED_MODEL, logger
 
 
 def get_latest_catalog() -> Path:

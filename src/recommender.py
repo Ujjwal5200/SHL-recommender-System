@@ -11,7 +11,7 @@ from typing import List, Dict, Any, Optional, Tuple
 from collections import Counter
 
 # Import configuration
-from config_v9 import (
+from src.config_v9 import (
     FAISS_DIR, DATA_DIR, LOG_LEVEL,
     OLLAMA_EMBED_MODEL, OLLAMA_LLM_MODEL, 
     GEMINI_MODEL_1, GEMINI_MODEL_2, RERANK_MODEL_1, RERANK_MODEL_2,
