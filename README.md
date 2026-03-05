@@ -9,6 +9,8 @@
 
 > 🔍 **Intelligent Assessment Matching**: A production-ready RAG-powered system that recommends SHL assessments from natural language job descriptions and queries using hybrid retrieval + LLM reranking.
 
+**Live link**
+https://shl-recommender-system-xnou.onrender.com
 ---
 
 ## 📋 Table of Contents
