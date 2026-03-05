@@ -53,20 +53,27 @@ except:
 
 def load_assessments() -> List[Dict]:
     """Load assessments from FAISS metadata."""
+    from src.config_v9 import FAISS_DIR, DATA_DIR, logger
+    
     meta_path = FAISS_DIR / "metadata.json"
+    logger.info(f"Looking for assessments at: {meta_path}")
+    logger.info(f"FAISS_DIR exists: {FAISS_DIR.exists()}")
+    
     if not meta_path.exists():
+        logger.warning(f"metadata.json not found at {meta_path}, trying fallback...")
         from glob import glob
         files = sorted(glob(str(DATA_DIR / "shl_individual_tests_*.json")), reverse=True)
         if files:
             with open(files[0], encoding="utf-8") as f:
                 assessments = json.load(f)
-                logger.info(f"Loaded {len(assessments)} from catalog")
+                logger.info(f"Loaded {len(assessments)} from catalog: {files[0]}")
                 return assessments
-        raise FileNotFoundError("No assessment data found")
+        logger.error(f"Data directory contents: {list(DATA_DIR.glob('*')) if DATA_DIR.exists() else 'DATA_DIR does not exist'}")
+        raise FileNotFoundError(f"No assessment data found. Checked: {meta_path}")
     
     with open(meta_path, encoding="utf-8") as f:
         assessments = json.load(f)
-    logger.info(f"Loaded {len(assessments)} assessments")
+    logger.info(f"Loaded {len(assessments)} assessments from {meta_path}")
     return assessments
 
 

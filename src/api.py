@@ -62,9 +62,12 @@ def get_recommendations(request: QueryRequest):
     try:
         results = recommend(query, top_k=top_k, use_rerank=request.use_rerank)
         return {"recommended_assessments": results, "query": query}
+    except FileNotFoundError as e:
+        logger.error(f"Data file error: {e}")
+        raise HTTPException(status_code=500, detail=f"Server configuration error: {str(e)}. Please contact the administrator.")
     except Exception as e:
         logger.error(f"Recommendation error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Error processing request: {str(e)[:100]}")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,8 @@ import logging
 import os
 
 # ==================== PATHS ====================
-ROOT = Path(__file__).resolve().parent
+# Use parent.parent because config_v9.py is in src/ folder
+ROOT = Path(__file__).resolve().parent.parent
 
 DATA_DIR         = ROOT / "data"
 CATALOG_GLOB     = DATA_DIR / "shl_individual_tests_*.json"
