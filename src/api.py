@@ -30,7 +30,7 @@ def recommend(request: QueryRequest):
                 "duration_minutes": r.get("duration_minutes", 0),
                 "adaptive_support": r.get("adaptive_support", "No"),
                 "remote_support": r.get("remote_support", "No"),
-"description": r.get("description", "")
+                "description": r.get("description", "")
             })
         return {"recommended_assessments": formatted}
     except Exception as e:
