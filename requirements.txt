@@ -11,12 +11,8 @@ streamlit
 pandas
 pydantic
 # LLM/RAG Dependencies
-langchain
-langchain-core
-langchain-community
 google-genai
 google-ai-generativelanguage
 sentence-transformers
-chromadb
 httpx
 python-dotenv
