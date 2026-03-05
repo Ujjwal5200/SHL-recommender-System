@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-# Use hybrid recommender (best performing)
-from src.recommender_final import get_recommendations
+# Use optimized recommender (best performing - 51% recall)
+from src.recommender_optimized import get_recommendations
 from src.logger import logger
 
 app = FastAPI(title="SHL Assessment Recommender API")
@@ -21,18 +21,17 @@ def recommend(request: QueryRequest):
         if len(recs) < 5:
             logger.warning("Low count – returning fallback")
         
-        formatted = [
-            {
-                "name": r["name"],
-                "url": r["url"],
-                "test_types": r["test_types"],
-                "duration_minutes": r["duration_minutes"],
-                "adaptive_support": r["adaptive_support"],
-                "remote_support": r["remote_support"],
-                "description": r["description"][:500]
-            }
-            for r in recs
-        ]
+        formatted = []
+        for r in recs:
+            formatted.append({
+                "name": r.get("name", ""),
+                "url": r.get("url", ""),
+                "test_types": r.get("test_types", []),
+                "duration_minutes": r.get("duration_minutes", 0),
+                "adaptive_support": r.get("adaptive_support", "No"),
+                "remote_support": r.get("remote_support", "No"),
+                "description": r.get("description", "")[:500] if r.get("description") else ""
+            })
         return {"recommended_assessments": formatted}
     except Exception as e:
         logger.error(f"API error: {e}")

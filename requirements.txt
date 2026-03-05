@@ -1,5 +1,7 @@
 langchain-community
-ollama                 # optional, but helps with client if needed
+langchain-google-genai
+langchain-huggingface
+ollama
 faiss-cpu
 tqdm
 requests
@@ -10,3 +12,6 @@ scikit-learn
 fastapi
 uvicorn
 streamlit
+rank-bm25
+sentence-transformers
+torch
