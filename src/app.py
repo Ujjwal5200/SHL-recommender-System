@@ -6,7 +6,7 @@ from typing import List, Dict
 
 # ---------------- CONFIG ----------------
 import os
-API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000/recommend")
+API_URL = os.environ.get("API_URL", "https://recommender-system-api-ikgr.onrender.com/recommend")
 REQUEST_TIMEOUT = 30
 
 st.set_page_config(
