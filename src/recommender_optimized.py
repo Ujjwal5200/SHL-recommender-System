@@ -308,7 +308,7 @@ def get_recommendations(query: str, top_n: int = 10) -> List[Dict]:
             'name': assessment.get('name', ''),
             'url': assessment.get('url', ''),
             'score': score,
-            'description': assessment.get('description', '')[:200]
+            'description': assessment.get('description', '')
         })
     
     return results
