@@ -265,6 +265,40 @@ The iterative improvement process demonstrated:
 
 ---
 
+## Deployment
+
+### Option 1: Render (FastAPI)
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn src.api:app --host 0.0.0.0 --port $PORT`
+
+### Option 2: Hugging Face Spaces (Streamlit)
+- Use `streamlit_app.py` as the main file
+- Upload `src/` folder and `requirements.txt`
+
+### API Endpoint Format
+```json
+POST /recommend
+{
+  "query": "Java developer"
+}
+```
+
+Response:
+```
+json
+{
+  "recommended_assessments": [
+    {
+      "name": "Core Java (Advanced Level) (New)",
+      "url": "https://www.shl.com/products/product-catalog/view/...",
+      "score": 15.0
+    }
+  ]
+}
+```
+
+---
+
 ## Appendix: File Structure
 
 ```
@@ -280,4 +314,10 @@ SHL-assessment-recommender/
 ├── data/
 │   ├── shl_individual_tests_20260302_1257.json  # 377 assessments
 │   └── Gen_AI_Dataset.xlsx         # Ground truth
-└── README.md                       # Quick start guide
+├── streamlit_app.py                # Standalone Streamlit app
+├── Procfile                        # Render deployment
+├── runtime.txt                     # Python version
+├── requirements.txt               # Dependencies
+├── README.md                       # Quick start guide
+└── report_approach.md              # This report
+```

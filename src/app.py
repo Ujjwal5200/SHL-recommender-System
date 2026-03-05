@@ -5,7 +5,8 @@ import pandas as pd
 from typing import List, Dict
 
 # ---------------- CONFIG ----------------
-API_URL =  "http://127.0.0.1:8000/recommend"
+import os
+API_URL = os.environ.get("API_URL", "http://127.0.0.1:8000/recommend")
 REQUEST_TIMEOUT = 30
 
 st.set_page_config(
@@ -45,7 +46,7 @@ def validate_data(data: List[Dict]) -> pd.DataFrame:
     return df[list(required_cols)]
 
 # ---------------- UI ----------------
-st.title("SHL Assessment Recommendation System")
+st.title("SHL  Recommendation System")
 
 st.markdown(
     """

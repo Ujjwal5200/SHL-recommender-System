@@ -218,6 +218,50 @@ Mean Recall@K = (1/N) × Σ Recall@K (for all N queries)
 
 ---
 
+## Deployment Instructions
+
+### Deploy to Render (API)
+
+1. **Push code to GitHub**
+   - Create a new repository on GitHub
+   - Push all files including: `src/`, `data/`, `requirements.txt`, `Procfile`, `runtime.txt`
+
+2. **Deploy to Render**
+   - Go to [render.com](https://render.com) and sign up
+   - Create a new "Web Service"
+   - Connect your GitHub repository
+   - Configure:
+     - Build Command: `pip install -r requirements.txt`
+     - Start Command: `uvicorn src.api:app --host 0.0.0.0 --port $PORT`
+   - Click "Deploy"
+
+3. **Get API URL**
+   - After deployment, copy the URL (e.g., `https://your-app.onrender.com`)
+   - Test with: `POST https://your-app.onrender.com/recommend` with `{"query": "Java developer"}`
+
+### Deploy to Hugging Face Spaces (Web UI)
+
+1. **Push code to Hugging Face**
+   - Create a new Space on [huggingface.co/spaces](https://huggingface.co/spaces)
+   - Select "Streamlit" as the SDK
+   - Upload: `streamlit_app.py`, `requirements.txt`, and `src/` folder
+
+2. **Get Web UI URL**
+   - Your app will be available at `https://username-shl-assessment-recommender.hf.space`
+
+---
+
+## Submission Summary
+
+| Item | Status | URL |
+|------|--------|-----|
+| API Endpoint | Ready for deployment | Render URL |
+| GitHub Code | Ready for push | Your GitHub URL |
+| Web UI | Ready for deployment | Hugging Face URL |
+| Test Predictions | Ready | `data/test_predictions.csv` |
+
+---
+
 ## License
 
 This project is for educational purposes as part of the SHL AI Intern Assessment.
