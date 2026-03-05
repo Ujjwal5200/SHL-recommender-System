@@ -42,15 +42,6 @@ Thumbs.db
 logs/
 *.log
 
-# Data
-data/faiss_index/
-data/*.json
-data/*.csv
-data/test_predictions*
-data/test_recall*
 
-# Keep these data files
-!data/train.csv
-!data/test.csv
 
-report_approach_v6.md  
+
