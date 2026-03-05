@@ -229,9 +229,9 @@ RRF_K = 60                      # RRF parameter
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `GEMINI_API_KEY` | No | Google Gemini API key for LLM reranking |
-| `OLLAMA_MODEL` | No | Ollama model (default: `llama3.2:latest`) |
-| `EMBED_MODEL` | No | Embedding model (default: `all-MiniLM-L6-v2`) |
+| `GEMINI_API_KEY` | yes | Google Gemini API key for LLM reranking |
+| `OLLAMA_MODEL` | yes | Ollama model (default: `llama3.2:latest`) |
+| `EMBED_MODEL` | yes | Embedding model (default: `all-MiniLM-L6-v2`) |
 
 ---
 
@@ -440,7 +440,7 @@ LOG_LEVEL = logging.DEBUG
 | V3 | Enhanced Scoring | ~45% | ~2s |
 | V4 | Skill Mappings | ~48% | ~2s |
 | V5 | Final Keyword Opt | ~51% | ~1.5s |
-| V9 | **RAG Hybrid + LLM** | **>51%** | **<2s** |
+| V9 | **RAG Hybrid + LLM** | **>60%** with gemini and **80%** with ollama | **>50%** | **<2s** |
 
 ---
 
@@ -472,6 +472,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ---
 
 <p align="center">
-  Made with ❤️ for HR Tech
+  Made with ❤️ 
 </p>
 
