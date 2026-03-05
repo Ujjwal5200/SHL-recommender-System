@@ -1,195 +1,425 @@
-# SHL Recommender - Unified Streamlit App
-# Combines features from both app.py and streamlit_app.py
+"""
+SHL Assessment Recommender - Professional Streamlit App
+A clean, intuitive interface for finding SHL assessments.
+"""
 import streamlit as st
 import requests
 import pandas as pd
-from typing import List, Dict
+from typing import List, Dict, Optional
 import os
 
-# ---------------- CONFIG ----------------
-# Toggle between local and remote API
+# ==================== CONFIG ====================
 USE_LOCAL_API = os.environ.get("USE_LOCAL_API", "false").lower() == "true"
 LOCAL_API_URL = os.environ.get("LOCAL_API_URL", "http://localhost:8000/recommend")
-REMOTE_API_URL = os.environ.get("REMOTE_API_URL", "https://recommender-system-api-ikgr.onrender.com/recommend")
+REMOTE_API_URL = os.environ.get("API_URL", "https://shl-recommender-api-dxe7.onrender.com/recommend")
 
-# Select API URL based on config
-if USE_LOCAL_API:
-    API_URL = LOCAL_API_URL
-else:
-    API_URL = REMOTE_API_URL
-
+API_URL = LOCAL_API_URL if USE_LOCAL_API else REMOTE_API_URL
 REQUEST_TIMEOUT = 60
 
+# ==================== PAGE CONFIG ====================
 st.set_page_config(
-    page_title="SHL Recommender",
+    page_title="SHL Assessment Recommender",
+    page_icon="📋",
     layout="wide",
-    page_icon="📊"
+    initial_sidebar_state="expanded"
 )
 
-# ---------------- HELPERS ----------------
-@st.cache_data(show_spinner=False)
+# ==================== CUSTOM CSS ====================
+st.markdown("""
+<style>
+    /* Main container styling */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
+    
+    /* Header styling */
+    .header-container {
+        text-align: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+        border-radius: 12px;
+        margin-bottom: 2rem;
+    }
+    
+    .header-title {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+    }
+    
+    .header-subtitle {
+        font-size: 1rem;
+        color: #a8c5e2;
+    }
+    
+    /* Card styling for results */
+    .result-card {
+        padding: 1.25rem;
+        background: #f8f9fa;
+        border-radius: 10px;
+        border-left: 4px solid #2d5a87;
+        margin-bottom: 1rem;
+        transition: transform 0.2s;
+    }
+    
+    .result-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .result-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #1e3a5f;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-url a {
+        color: #2d5a87;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .result-url a:hover {
+        text-decoration: underline;
+    }
+    
+    .result-score {
+        display: inline-block;
+        background: #2d5a87;
+        color: white;
+        padding: 2px 10px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .result-reason {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+        font-style: italic;
+    }
+    
+    /* Metric cards */
+    .metric-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+    
+    .metric-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #2d5a87;
+    }
+    
+    .metric-label {
+        font-size: 0.85rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Example query chips */
+    .example-chip {
+        display: inline-block;
+        padding: 6px 14px;
+        background: #e8f0f8;
+        color: #2d5a87;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        margin: 4px;
+        cursor: pointer;
+        border: 1px solid #d0e0f0;
+        transition: all 0.2s;
+    }
+    
+    .example-chip:hover {
+        background: #2d5a87;
+        color: white;
+    }
+    
+    /* Status indicator */
+    .status-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+    
+    .status-local {
+        background: #fff3cd;
+        color: #856404;
+    }
+    
+    .status-remote {
+        background: #d4edda;
+        color: #155724;
+    }
+    
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .status-local .status-dot {
+        background: #ffc107;
+    }
+    
+    .status-remote .status-dot {
+        background: #28a745;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==================== HELPER FUNCTIONS ====================
+@st.cache_data(ttl=300, show_spinner=False)
 def fetch_recommendations(query: str, top_k: int = 10, use_rerank: bool = True) -> List[Dict]:
+    """Fetch recommendations from the API."""
     payload = {"query": query}
     
-    # Add optional parameters for local API
     if USE_LOCAL_API:
         payload["top_k"] = top_k
         payload["use_rerank"] = use_rerank
     
-    response = requests.post(
-        API_URL,
-        json=payload,
-        timeout=REQUEST_TIMEOUT
-    )
+    response = requests.post(API_URL, json=payload, timeout=REQUEST_TIMEOUT)
     response.raise_for_status()
     result = response.json()
     
-    # Handle both response formats
     if "recommended_assessments" in result:
         return result["recommended_assessments"]
     elif "results" in result:
         return result["results"]
-    else:
-        return result
+    return result
 
-def validate_data(data: List[Dict]) -> pd.DataFrame:
-    required_cols = {
-        "name", "url", "test_types",
-        "adaptive_support", "remote_support"
-    }
 
-    df = pd.DataFrame(data)
+def display_result_card(item: Dict, index: int):
+    """Display a single result as a styled card."""
+    name = item.get("name", "Unknown Assessment")
+    url = item.get("url", "#")
+    score = item.get("score", 0)
+    reason = item.get("reason", "")
+    
+    # Score percentage
+    score_pct = int(score * 100) if score <= 1 else int(score)
+    
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-title">{index + 1}. {name}</div>
+        <div class="result-url">
+            <a href="{url}" target="_blank">🔗 View Assessment →</a>
+        </div>
+        <span class="result-score">Match: {score_pct}%</span>
+        <div class="result-reason">{reason}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    missing = required_cols - set(df.columns)
-    if missing:
-        # Return what we have if not all columns present
-        return df
 
-    return df[list(required_cols)]
+def display_example_queries():
+    """Display clickable example queries."""
+    examples = [
+        "Java developer assessment",
+        "Python coding test for data scientists",
+        "Sales manager personality test",
+        "Excel skills assessment for analysts",
+        "Technical competency test for engineers",
+        "Customer service representative screening",
+        "Leadership and management evaluation",
+        "Financial analyst quantitative test"
+    ]
+    
+    cols = st.columns(4)
+    for i, example in enumerate(examples):
+        with cols[i % 4]:
+            if st.button(f"📝 {example}", key=f"example_{i}", use_container_width=True):
+                st.session_state.query_text = example
+                st.rerun()
 
-# ---------------- UI ----------------
-st.title("SHL Assessment Recommender")
+# ==================== SIDEBAR ====================
+with st.sidebar:
+    st.image("https://www.shl.com/shl1315/wp-content/uploads/2021/12/SHL-logo.png", width=150)
+    
+    st.markdown("### ⚙️ Settings")
+    
+    st.markdown("**API Endpoint:**")
+    status_class = "status-local" if USE_LOCAL_API else "status-remote"
+    status_text = "🔴 Local" if USE_LOCAL_API else "🟢 Cloud"
+    st.markdown(f'<div class="status-indicator {status_class}"><span class="status-dot"></span>{status_text}</div>', 
+                unsafe_allow_html=True)
+    
+    with st.expander("Advanced Options", expanded=False):
+        top_k = st.slider("Results to show", 5, 10, 3)
+        use_rerank = st.checkbox("Use AI Reranking", value=True, help="Uses Gemini to improve relevance")
+    
+    st.markdown("---")
+    
+    st.markdown("### ℹ️ About")
+    st.info("""
+    **SHL Assessment Recommender** uses advanced AI to match job requirements with SHL's assessment library.
+    
+    **Features:**
+    • Natural language matching
+    • Semantic search
+    • AI-powered reranking
+    • 500+ assessments
+    """)
+    
+    st.markdown("---")
+    st.markdown("**Need Help?** Contact your HR tech team.")
 
-# API Status Indicator
-api_status = "🔴 Local" if USE_LOCAL_API else "🟢 Remote"
-st.markdown(f"**API Status:** {api_status} ({API_URL})")
+# ==================== MAIN CONTENT ====================
+# Header
+st.markdown("""
+<div class="header-container">
+    <div class="header-title">📋 SHL Assessment Recommender</div>
+    <div class="header-subtitle">Find the perfect assessments for your hiring needs</div>
+</div>
+""", unsafe_allow_html=True)
 
-st.markdown(
-    """
-Enter **natural language**, **job description**, or a **JD URL**  
-to receive **relevant SHL Individual Test Solutions**.
-"""
-)
+# Initialize session state for selected example
+if "selected_example" not in st.session_state:
+    st.session_state.selected_example = ""
 
+# Example queries - clickable links
+examples = [
+    "Java developer assessment",
+    "Python coding test for data scientists",
+    "Sales manager personality test",
+    "Excel skills assessment for analysts",
+    "Technical competency test for engineers",
+    "Customer service representative screening",
+    "Leadership and management evaluation",
+    "Financial analyst quantitative test"
+]
+
+st.markdown("**💡 Try these examples:**")
+example_cols = st.columns(4)
+for i, example in enumerate(examples):
+    with example_cols[i % 4]:
+        if st.button(f"📝 {example[:25]}...", key=f"example_{i}", use_container_width=True):
+            st.session_state.selected_example = example
+
+# Query input - use session state for pre-filled value
 query = st.text_area(
-    "Query / JD text / URL",
-    height=150,
-    placeholder="Example: Hiring Java developers with strong collaboration and problem-solving skills..."
+    "Describe your hiring needs:",
+    height=120,
+    placeholder="e.g., We need to assess Python developers with strong problem-solving skills...",
+    value=st.session_state.selected_example,
+    key="query_input"
 )
 
-# Options row
-col1, col2, col3 = st.columns([1, 1, 2])
+# Search button
+col1, col2 = st.columns([1, 4])
 with col1:
-    top_k = st.slider("Number of recommendations", 5, 20, 10)
+    search_btn = st.button("🔍 Find Assessments", type="primary", use_container_width=True)
 with col2:
-    use_rerank = st.checkbox("Use Gemini Reranking", value=True)
-with col3:
-    show_details = st.checkbox("Show detailed descriptions", value=True)
+    st.markdown(f"*Powered by{' Ollama + Gemini' if use_rerank else ' advanced search'}*")
 
-if st.button("Get Recommendations", type="primary"):
-    if not query.strip():
-        st.warning("Query cannot be empty")
-        st.stop()
-
-    with st.spinner("Finding best assessments..."):
+# ==================== RESULTS ====================
+if search_btn and query.strip():
+    with st.spinner("🔎 Analyzing requirements and finding best matches..."):
         try:
             results = fetch_recommendations(query, top_k=top_k, use_rerank=use_rerank)
-
+            
             if not results:
-                st.info("No recommendations found. Try a more specific query.")
-                st.stop()
-
-            # Try to validate and display as dataframe
-            try:
-                df = validate_data(results)
+                st.warning("""
+                ⚠️ No assessments found matching your criteria.
                 
-                st.success(f"Found {len(df)} relevant assessments")
+                **Suggestions:**
+                • Try different keywords
+                • Use more general terms
+                • Check your spelling
+                """)
+            else:
+                # Success header
+                st.success(f"✅ Found {len(results)} relevant assessment(s)")
                 
-                # Display dataframe if we have the expected columns
-                if all(col in df.columns for col in ["name", "url", "test_types"]):
-                    st.dataframe(
-                        df,
-                        use_container_width=True,
-                        column_config={
-                            "url": st.column_config.LinkColumn(
-                                "Assessment URL",
-                                display_text="View"
-                            ),
-                            "test_types": st.column_config.ListColumn("Test Types"),
-                            "adaptive_support": st.column_config.CheckboxColumn("Adaptive"),
-                            "remote_support": st.column_config.CheckboxColumn("Remote")
-                        }
-                    )
-                else:
-                    # Fallback: display as JSON/table
-                    st.dataframe(results, use_container_width=True)
-            except Exception as e:
-                st.dataframe(results, use_container_width=True)
-
-            # Show detailed descriptions
-            if show_details:
-                with st.expander("Detailed Descriptions"):
-                    for item in results:
-                        st.markdown(f"### {item.get('name', 'N/A')}")
-                        st.markdown(f"**[Open Assessment]({item.get('url', '#')})**")
+                # Metrics row
+                m1, m2, m3 = st.columns(3)
+                with m1:
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-value">{len(results)}</div>
+                        <div class="metric-label">Results Found</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with m2:
+                    # Count unique test types
+                    test_types = set()
+                    for r in results:
+                        test_types.update(r.get("test_types", []))
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-value">{len(test_types)}</div>
+                        <div class="metric-label">Test Categories</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                with m3:
+                    avg_score = sum(r.get("score", 0) for r in results) / len(results)
+                    st.markdown(f"""
+                    <div class="metric-card">
+                        <div class="metric-value">{int(avg_score * 100)}%</div>
+                        <div class="metric-label">Avg. Match Score</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("---")
+                
+                # Results
+                st.markdown("### 📊 Recommended Assessments")
+                
+                for i, item in enumerate(results):
+                    display_result_card(item, i)
+                    
+                # Export option
+                if results:
+                    df = pd.DataFrame([{
+                        "Rank": i + 1,
+                        "Assessment": r.get("name", ""),
+                        "URL": r.get("url", ""),
+                        "Match Score": f"{r.get('score', 0)*100:.0f}%",
+                        "Reason": r.get("reason", "")
+                    } for i, r in enumerate(results)])
+                    
+                    st.markdown("---")
+                    with st.expander("📥 Download Results"):
+                        st.dataframe(df, use_container_width=True)
                         
-                        # Show score if available
-                        if "score" in item:
-                            st.write(f"**Score:** {item['score']:.2f}")
+                        csv = df.to_csv(index=False)
+                        st.download_button(
+                            label="📥 Download as CSV",
+                            data=csv,
+                            file_name="shl_recommendations.csv",
+                            mime="text/csv"
+                        )
                         
-                        # Show reason if available (from reranking)
-                        if "reason" in item:
-                            st.write(f"**Reason:** {item['reason']}")
-                        
-                        # Show description
-                        st.write(item.get("description", "No description provided"))
-                        st.divider()
-
         except requests.exceptions.Timeout:
-            st.error("API request timed out. Backend is slow or unreachable.")
-
+            st.error("⏱️ Request timed out. The server is taking too long to respond.")
         except requests.exceptions.ConnectionError:
-            st.error(f"Cannot connect to API. Make sure the API is running at {API_URL}")
-
+            st.error(f"🔌 Could not connect to the API. Please check your connection.")
         except requests.exceptions.HTTPError as e:
-            st.error(f"API error: {e.response.status_code}")
-
-        except ValueError as e:
-            st.error(f"Data validation error: {e}")
-
+            st.error(f"⚠️ API error: {e}")
         except Exception as e:
-            st.error(f"Unexpected error: {e}")
+            st.error(f"❌ An unexpected error occurred: {str(e)}")
 
-# ---------------- SIDEBAR ----------------
-with st.sidebar:
-    st.header("Settings")
-    st.info(
-        """
-        **API Configuration:**
-        - Set `USE_LOCAL_API=true` env var to use local API
-        - Default: Remote API (render.com)
-        
-        **Features:**
-        - Natural language queries
-        - Job description matching
-        - JD URL support
-        - Gemini reranking (local only)
-        """
-    )
-    
-    st.header("About")
-    st.write("SHL Assessment Recommender System")
+elif search_btn and not query.strip():
+    st.warning("⚠️ Please enter a query to find assessments.")
 
-if __name__ == "__main__":
-    st.run()
+# ==================== FOOTER ====================
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: #888; padding: 1rem;">
+    <small>SHL Assessment Recommender v9.0 • Built with ❤️ using FastAPI, Streamlit & Gemini</small>
+</div>
+""", unsafe_allow_html=True)
 
