@@ -204,28 +204,9 @@ for r in results:
 
 ---
 
-## ⚙️ Configuration
 
-All configuration is centralized in `config_v9.py`. Key settings:
 
-```python
-# ==================== EMBEDDINGS ====================
-EMBED_MODEL = "all-MiniLM-L6-v2"           # Sentence-transformers
-OLLAMA_EMBED_MODEL = "nomic-embed-text"    # Ollama embeddings
 
-# ==================== LLM MODELS ====================
-GEMINI_MODEL_1 = "gemini-3.1-flash-lite-preview"  # Primary
-GEMINI_MODEL_2 = "gemini-2.5-flash-lite"           # Fallback
-OLLAMA_LLM_MODEL = "qwen3.5:0.8b"                  # Local fallback
-
-# ==================== RETRIEVAL WEIGHTS ====================
-KW_WEIGHT_NAME = 30.0           # Keyword name match
-KW_WEIGHT_TEST_TYPES = 25.0    # Test type match
-KW_WEIGHT_DESC = 15.0           # Description match
-SEMANTIC_TOP_K = 100            # Semantic search candidates
-HYBRID_TOP_K = 25               # Final hybrid candidates
-RRF_K = 60                      # RRF parameter
-```
 
 ### Environment Variables
 
