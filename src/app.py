@@ -253,7 +253,7 @@ with st.sidebar:
     
     st.markdown("**API Endpoint:**")
     status_class = "status-local" if USE_LOCAL_API else "status-remote"
-    status_text = "🔴 Local" if USE_LOCAL_API else "🟢 Cloud"
+    status_text = "🔴 Local" if USE_LOCAL_API else "🟢 Cloud,plz RUN backend before using app (https://shl-recommender-api-dxe7.onrender.com) just click it as app take time to start"
     st.markdown(f'<div class="status-indicator {status_class}"><span class="status-dot"></span>{status_text}</div>', 
                 unsafe_allow_html=True)
     
@@ -282,7 +282,7 @@ with st.sidebar:
 st.markdown("""
 <div class="header-container">
     <div class="header-title">📋 SHL Assessment Recommender</div>
-    <div class="header-subtitle">Find the perfect assessments for your hiring needs</div>
+    <div class="header-subtitle">Find the perfect assessments for your hiring needs,PLZ see sidebar INFO before starting</div>
 </div>
 """, unsafe_allow_html=True)
 
